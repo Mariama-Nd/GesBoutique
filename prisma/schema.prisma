@@ -1,0 +1,85 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  role      Role     @default(VENDEUR)
+  createdAt DateTime @default(now())
+  sales     Sale[]
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+}
+
+model Product {
+  id            Int         @id @default(autoincrement())
+  name          String
+  description   String?
+  price         Float
+  stockQuantity Int         @default(0)
+  threshold     Int         @default(5)
+  categoryId    Int
+  category      Category    @relation(fields: [categoryId], references: [id])
+  sales         Sale[]
+  stocks        Stock[] // ← relation inverse vers Stock
+  inventories   Inventory[] // ← relation inverse vers Inventory
+  createdAt     DateTime    @default(now())
+}
+
+model Stock {
+  id        Int       @id @default(autoincrement())
+  productId Int
+  quantity  Int
+  type      StockType // "ENTREE" ou "SORTIE"
+  createdAt DateTime  @default(now())
+  product   Product   @relation(fields: [productId], references: [id])
+}
+
+model Sale {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  productId  Int
+  quantity   Int
+  totalPrice Float
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id])
+}
+
+model Inventory {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  quantity  Int
+  date      DateTime
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id])
+}
+
+enum StockType {
+  ENTREE
+  SORTIE
+}
+
+enum Role {
+  ADMIN
+  VENDEUR
+  SUPERVISEUR
+}
